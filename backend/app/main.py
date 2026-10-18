@@ -10,6 +10,12 @@ from app.chat import models as chat_models
 from app.chat.router import router as rooms_router
 from app.chat.ws import router as ws_router
 
+from pathlib import Path
+
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title=settings.app_name)
@@ -29,3 +35,15 @@ app.include_router(ws_router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+if DIST.exists():
+    app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="assets")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def spa(path: str):
+        file = (DIST / path).resolve()
+        if path and file.is_file() and DIST.resolve() in file.parents:
+            return FileResponse(file)
+        return FileResponse(DIST / "index.html")
