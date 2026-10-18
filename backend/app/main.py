@@ -6,6 +6,9 @@ from app.auth.router import router as auth_router
 from app.core.config import settings
 from app.core.database import Base, engine
 
+from app.chat import models as chat_models
+from app.chat.router import router as rooms_router
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title=settings.app_name)
@@ -18,7 +21,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
-
+app.include_router(rooms_router)
 
 @app.get("/health")
 def health():
