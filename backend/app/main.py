@@ -8,6 +8,7 @@ from app.core.database import Base, engine
 
 from app.chat import models as chat_models
 from app.chat.router import router as rooms_router
+from app.chat.ws import router as ws_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -22,7 +23,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(rooms_router)
-
+app.include_router(ws_router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
