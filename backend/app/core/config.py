@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 600
     cors_origins: str = "http://localhost:5173"
+    static_dir: str | None = None  # built frontend to serve; defaults to ../frontend/dist
 
     model_config = SettingsConfigDict(env_file=".env")
 

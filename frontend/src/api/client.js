@@ -24,6 +24,13 @@ api.interceptors.response.use(
   }
 );
 
+// Open a WebSocket with a fresh one-time ticket (the JWT itself never goes in a URL).
+export async function openSocket(path) {
+  const res = await api.post("/ws/ticket");
+  const sep = path.includes("?") ? "&" : "?";
+  return new WebSocket(`${WS_URL}${path}${sep}ticket=${encodeURIComponent(res.data.ticket)}`);
+}
+
 export function errorMessage(err) {
   const detail = err.response?.data?.detail;
   if (typeof detail === "string") return detail;

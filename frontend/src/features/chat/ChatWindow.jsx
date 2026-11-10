@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import api from "../../api/client";
 import { useAuth } from "../auth/AuthContext";
 import useRoomSocket from "./useRoomSocket";
 
-export default function ChatWindow({ room, onLeave }) {
+export default function ChatWindow({ room, onLeave, onRead }) {
   const { user, token } = useAuth();
   const { messages, online, typing, status, error, hasMore, send, sendTyping, loadOlder } =
     useRoomSocket(room.id, token);
@@ -14,6 +15,19 @@ export default function ChatWindow({ room, onLeave }) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lastId]);
+
+  // Mark messages read while the chat is on screen. A background tab doesn't count, so
+  // unread badges stay accurate; coming back to the tab marks them read.
+  useEffect(() => {
+    function markRead() {
+      if (document.visibilityState !== "visible") return;
+      api.post(`/rooms/${room.id}/read`, lastId ? { message_id: lastId } : {}).catch(() => {});
+      onRead(room.id);
+    }
+    markRead();
+    document.addEventListener("visibilitychange", markRead);
+    return () => document.removeEventListener("visibilitychange", markRead);
+  }, [room.id, lastId, onRead]);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -34,10 +48,10 @@ export default function ChatWindow({ room, onLeave }) {
     <div className="window">
       <div className="window-head">
         <div>
-          <h2>#{room.name}</h2>
+          <h2>{room.title}</h2>
           <span className="muted">{status === "online" ? "Connected" : status}</span>
         </div>
-        <button className="ghost" onClick={onLeave}>Leave room</button>
+        {onLeave && <button className="ghost" onClick={onLeave}>Leave room</button>}
       </div>
 
       <div className="body">

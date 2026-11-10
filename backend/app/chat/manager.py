@@ -45,4 +45,35 @@ class ConnectionManager:
             self.disconnect(room_id, uid, ws)
 
 
+class UserChannels:
+    """One socket per open tab, per user, for events outside the room you're viewing.
+
+    Room sockets only exist for the room on screen, so this is how the sidebar learns that
+    another room (or a brand-new DM) has a new message and should show an unread badge.
+    """
+
+    def __init__(self):
+        self.users: dict[int, set[WebSocket]] = {}
+
+    def connect(self, user_id: int, ws: WebSocket) -> None:
+        self.users.setdefault(user_id, set()).add(ws)
+
+    def disconnect(self, user_id: int, ws: WebSocket) -> None:
+        sockets = self.users.get(user_id)
+        if sockets is None:
+            return
+        sockets.discard(ws)
+        if not sockets:
+            del self.users[user_id]
+
+    async def send(self, user_ids, payload: dict) -> None:
+        for uid in user_ids:
+            for ws in list(self.users.get(uid, ())):
+                try:
+                    await ws.send_json(payload)
+                except Exception:
+                    self.disconnect(uid, ws)
+
+
 manager = ConnectionManager()
+channels = UserChannels()

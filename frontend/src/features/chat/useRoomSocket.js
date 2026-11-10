@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import api, { WS_URL } from "../../api/client";
+import api, { openSocket } from "../../api/client";
 
 const PAGE = 30;
 
@@ -40,8 +40,29 @@ export default function useRoomSocket(roomId, token) {
       });
     }
 
-    function connect() {
-      const ws = new WebSocket(`${WS_URL}/ws/rooms/${roomId}?token=${token}`);
+    function scheduleReconnect() {
+      // A refused handshake also lands here, so stop after a few tries
+      if (retries >= 5) {
+        setStatus("offline");
+        return;
+      }
+      setStatus("reconnecting");
+      reconnectTimer = setTimeout(connect, Math.min(1000 * 2 ** retries, 10000));
+      retries += 1;
+    }
+
+    async function connect() {
+      let ws;
+      try {
+        ws = await openSocket(`/ws/rooms/${roomId}`); // new ticket for every attempt
+      } catch {
+        if (!cancelled) scheduleReconnect();
+        return;
+      }
+      if (cancelled) {
+        ws.close();
+        return;
+      }
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -67,15 +88,7 @@ export default function useRoomSocket(roomId, token) {
       };
 
       ws.onclose = () => {
-        if (cancelled) return;
-        // A refused handshake also lands here, so stop after a few tries
-        if (retries >= 5) {
-          setStatus("offline");
-          return;
-        }
-        setStatus("reconnecting");
-        reconnectTimer = setTimeout(connect, Math.min(1000 * 2 ** retries, 10000));
-        retries += 1;
+        if (!cancelled) scheduleReconnect();
       };
     }
 
