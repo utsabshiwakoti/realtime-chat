@@ -2,6 +2,8 @@
 
 A multi-room chat app with direct messages, unread counts, live messaging over WebSockets, message history, online presence, and typing indicators.
 
+**Live demo:** https://realtime-chat-ru2u.onrender.com (free tier, so the first load after idle can take ~30 seconds). Open it in two browsers to chat between two accounts.
+
 ![Direct messages and unread badges](docs/chat-dm.png)
 
 ## Features
