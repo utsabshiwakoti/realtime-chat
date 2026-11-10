@@ -1,0 +1,14 @@
+# Render Blueprint: New > Blueprint > pick this repo. Builds the Dockerfile and redeploys
+# on every push to main. DATABASE_URL is asked for once during setup.
+services:
+  - type: web
+    name: realtime-chat
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false # paste a Neon connection string when prompted
+      - key: SECRET_KEY
+        generateValue: true
